@@ -6,14 +6,16 @@ class Parser {
         for (let char of expression) {
             if (/\d|\./.test(char)) {
                 numberBuffer += char;
-            } else {
+            } else if (/[+\-*/()]/.test(char)) {
                 if (numberBuffer) {
                     tokens.push(numberBuffer);
                     numberBuffer = '';
                 }
-                if (/[+\-*/()]/.test(char)) {
-                    tokens.push(char);
-                }
+                tokens.push(char);
+            } else if (char.trim() === '') {
+                continue; // игнорируем пробелы
+            } else {
+                throw new Error(`Invalid character: ${char}`);
             }
         }
 

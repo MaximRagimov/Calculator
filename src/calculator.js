@@ -3,60 +3,58 @@ const Parser = require('./parser');
 class Calculator {
     constructor() {
         this.parser = new Parser();
+        this.operations = {};
+    }
+
+    registerOperation(operation) {
+        this.operations[operation.symbol] = operation;
     }
 
     calculate(expression) {
-        const tokens = this.parser.parse(expression);
-        const rpn = this.toReversePolishNotation(tokens);
-        return this.evaluateRPN(rpn);
+        try {
+            const tokens = this.parser.parse(expression);
+            const rpn = this.toReversePolishNotation(tokens);
+            return this.evaluateRPN(rpn);
+        } catch (error) {
+            throw new Error(`Calculation error: ${error.message}`);
+        }
     }
 
     toReversePolishNotation(tokens) {
-        const precedence = {
-            '+': 1,
-            '-': 1,
-            '*': 2,
-            '/': 2
-        };
 
         const outputQueue = [];
         const operatorStack = [];
 
         tokens.forEach(token => {
-            if(!isNaN(token)){
+            if (!isNaN(token)) {
                 outputQueue.push(token);
-            } else if (/[+\-*/]/.test(token)) {
-                while (operatorStack.length && precedence[operatorStack[operatorStack.length - 1]] >= precedence[token]) {
+            } else if (this.operations[token]) {
+                const operation = this.operations[token];
+                while (operatorStack.length && this.operations[operatorStack[operatorStack.length - 1]] &&
+                this.operations[operatorStack[operatorStack.length - 1]].precedence >= operation.precedence) {
                     outputQueue.push(operatorStack.pop());
                 }
                 operatorStack.push(token);
             } else if (token === '(') {
                 operatorStack.push(token);
             } else if (token === ')') {
-                while (operatorStack[operatorStack.length - 1] !== '(') {
+                while (operatorStack.length && operatorStack[operatorStack.length - 1] !== '(') {
                     outputQueue.push(operatorStack.pop());
                 }
-                operatorStack.pop();
+                if (operatorStack.length && operatorStack[operatorStack.length - 1] === '(') {
+                    operatorStack.pop();
+                } else {
+                    throw new Error('Mismatched parentheses');
+                }
             }
-            // if (/\d/.test(token)) {
-            //     outputQueue.push(token);
-            // } else if (/[+\-*/]/.test(token)) {
-            //     while (operatorStack.length && precedence[operatorStack[operatorStack.length - 1]] >= precedence[token]) {
-            //         outputQueue.push(operatorStack.pop());
-            //     }
-            //     operatorStack.push(token);
-            // } else if (token === '(') {
-            //     operatorStack.push(token);
-            // } else if (token === ')') {
-            //     while (operatorStack[operatorStack.length - 1] != '(') {
-            //         outputQueue.push(operatorStack.pop());
-            //     }
-            //     operatorStack.pop();
-            // }
         });
 
         while (operatorStack.length) {
-            outputQueue.push(operatorStack.pop());
+            const op = operatorStack.pop();
+            if (op === '(' || op === ')') {
+                throw new Error('Mismatched parentheses');
+            }
+            outputQueue.push(op);
         }
 
         return outputQueue;
@@ -66,30 +64,23 @@ class Calculator {
         const stack = [];
 
         rpn.forEach(token => {
-            // if (/\d/.test(token)) {
-            //     stack.push(parseFloat(token));
             if (!isNaN(token)) {
                 stack.push(parseFloat(token));
-            } else {
+            } else if (this.operations[token]) {
+                if (stack.length < 2) {
+                    throw new Error('Invalid expression');
+                }
                 const b = stack.pop();
                 const a = stack.pop();
-
-                switch (token) {
-                    case '+':
-                        stack.push(a + b);
-                        break;
-                    case '-':
-                        stack.push(a - b);
-                        break;
-                    case '*':
-                        stack.push(a * b);
-                        break;
-                    case '/':
-                        stack.push(a / b);
-                        break;
-                }
+                stack.push(this.operations[token].execute(a, b));
+            } else {
+                throw new Error(`Unknown token: ${token}`);
             }
         });
+
+        if (stack.length !== 1) {
+            throw new Error('Invalid expression');
+        }
 
         return stack[0];
     }
