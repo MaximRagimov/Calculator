@@ -59,6 +59,7 @@ describe('Calculator', () => {
         expect(() => calculator.calculate('2+3)*2')).to.throw('Calculation error: Mismatched parentheses');
     });
 
+    // TODO: подобные выражения считать за ошибку?
     // it('should throw an error for invalid expression', () => {
     //     expect(() => calculator.calculate('2++3')).to.throw('Calculation error: Invalid expression');
     // });

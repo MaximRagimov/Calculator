@@ -10,14 +10,13 @@ class Parser {
         let expectingUnary = true; // Флаг, указывающий на ожидание унарного оператора
         let openParenthesesCount = 0; // Счётчик открывающих скобок
 
-        // for (let char of expression) {
         for (let i = 0; i < expression.length; i++) {
             const char = expression[i];
 
             if (/\d|\./.test(char)) {
                 numberBuffer += char;
                 expectingUnary = false; // Число завершает ожидание унарного оператора
-            } else if (this.isOperator(char) /*/[+\-*!/()]/.test(char)*/ || this.isUnaryOperator(char) || char === '(' || char === ')') {
+            } else if (this.isOperator(char) || this.isUnaryOperator(char) || char === '(' || char === ')') {
                 if (numberBuffer) {
                     tokens.push(numberBuffer);
                     numberBuffer = '';
@@ -39,7 +38,6 @@ class Parser {
                         throw new Error('Mismatched parentheses');
                     }
                 } else {
-                    // expectingUnary = char === '+' || char === '-' || char === '*' || char === '/' || char === '%'; // После операторов ожидается унарный оператор
                     expectingUnary = this.isUnaryOperator(char);
                 }
             } else if (char.trim() === '') {
