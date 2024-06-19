@@ -1,8 +1,10 @@
 const Parser = require('./parser');
+const operations = require('./operations');
 
 class Calculator {
     constructor() {
         this.parser = new Parser();
+        this.supportedOperations = operations;
         this.operations = {};
     }
 
@@ -21,7 +23,6 @@ class Calculator {
     }
 
     toReversePolishNotation(tokens) {
-
         const outputQueue = [];
         const operatorStack = [];
 
@@ -31,7 +32,7 @@ class Calculator {
             } else if (this.operations[token]) {
                 const operation = this.operations[token];
                 while (operatorStack.length && this.operations[operatorStack[operatorStack.length - 1]] &&
-                this.operations[operatorStack[operatorStack.length - 1]].precedence >= operation.precedence) {
+                    this.operations[operatorStack[operatorStack.length - 1]].precedence >= operation.precedence) {
                     outputQueue.push(operatorStack.pop());
                 }
                 operatorStack.push(token);
@@ -46,6 +47,8 @@ class Calculator {
                 } else {
                     throw new Error('Mismatched parentheses');
                 }
+            } else {
+                throw new Error(`Unknown token: ${token}`);
             }
         });
 
@@ -67,12 +70,21 @@ class Calculator {
             if (!isNaN(token)) {
                 stack.push(parseFloat(token));
             } else if (this.operations[token]) {
-                if (stack.length < 2) {
-                    throw new Error('Invalid expression');
+                const operation = this.operations[token];
+                if (operation.symbol.startsWith('u')) {
+                    if (stack.length < 1) {
+                        throw new Error('Invalid expression');
+                    }
+                    const a = stack.pop();
+                    stack.push(operation.execute(a));
+                } else {
+                    if (stack.length < 2) {
+                        throw new Error('Invalid expression');
+                    }
+                    const b = stack.pop();
+                    const a = stack.pop();
+                    stack.push(this.operations[token].execute(a, b));
                 }
-                const b = stack.pop();
-                const a = stack.pop();
-                stack.push(this.operations[token].execute(a, b));
             } else {
                 throw new Error(`Unknown token: ${token}`);
             }
